@@ -135,11 +135,8 @@ export default function TaskBoard({
     }
   };
 
-  const handleDelete = async (taskId: string) => {
-    if (confirm("Are you sure you want to delete this task?")) {
-      setTasks((prev) => prev.filter((t) => t._id !== taskId));
-      await onTaskDelete(taskId);
-    }
+  const handleDelete = (taskId: string) => {
+    onTaskDelete(taskId);
   };
 
   return (

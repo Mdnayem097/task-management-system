@@ -30,6 +30,8 @@ const priorityConfig = {
 };
 
 export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+  const taskId = task._id || (task as Task & { id?: string }).id || "";
+
   const {
     attributes,
     listeners,
@@ -38,7 +40,7 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
     transition,
     isDragging,
   } = useSortable({
-    id: task._id,
+    id: taskId,
     data: { task },
   });
 
@@ -48,6 +50,16 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   };
 
   const priorityStyle = priorityConfig[task.priority] || priorityConfig.MEDIUM;
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(taskId); 
+  };
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit(task);
+  };
 
   return (
     <div
@@ -111,14 +123,14 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         {/* Action Buttons */}
         <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={() => onEdit(task)}
+            onClick={handleEdit}
             className="p-1.5 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
             title="Edit Task"
           >
             <Edit2 className="h-3.5 w-3.5" />
           </button>
           <button
-            onClick={() => onDelete(task._id)}
+            onClick={handleDelete}
             className="p-1.5 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
             title="Delete Task"
           >

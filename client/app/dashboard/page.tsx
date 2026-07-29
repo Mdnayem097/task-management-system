@@ -2,20 +2,26 @@
 
 import { useEffect, useState } from "react";
 import TaskBoard from "@/components/tasks/TaskBoard";
+import DeleteConfirmModal from "@/components/tasks/DeleteConfirmModal"; // 👈 Delete Modal Import
 import { Task, TaskStatus } from "@/types";
 import { Loader2 } from "lucide-react";
 import API from "@/lib/axios";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ১. Reusable Fetch Function (Effect-এর ভেতর থেকে ও বাইরে থেকে নিরাপদে কল করার জন্য)
+  // 🔴 Delete Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedTaskToDelete, setSelectedTaskToDelete] = useState<Task | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const fetchTasks = async () => {
     try {
       const response = await API.get("/tasks");
-
-      // Safe Response Extraction
       const taskList: Task[] =
         response.data?.data?.tasks ||
         response.data?.tasks ||
@@ -24,12 +30,12 @@ export default function DashboardPage() {
       setTasks(taskList);
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
+      toast.error("Failed to load tasks!");
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. Fetch tasks on initial render safely
   useEffect(() => {
     let isMounted = true;
 
@@ -41,15 +47,12 @@ export default function DashboardPage() {
           response.data?.tasks ||
           (Array.isArray(response.data) ? response.data : []);
 
-        if (isMounted) {
-          setTasks(taskList);
-        }
+        if (isMounted) setTasks(taskList);
       } catch (error) {
         console.error("Failed to fetch tasks:", error);
+        toast.error("Failed to load tasks!");
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 
@@ -60,29 +63,29 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // 3. Create Task Handler
+  // 1. Create Task
   const handleTaskCreate = async (taskData: Partial<Task>) => {
     try {
       const response = await API.post("/tasks", taskData);
-
       const newTask: Task | undefined =
         response.data?.data?.task || response.data?.task || response.data?.data;
 
       if (newTask) {
         setTasks((prev) => [newTask, ...prev]);
+        toast.success("Task created successfully!");
       } else {
         await fetchTasks();
       }
     } catch (error) {
       console.error("Failed to create task:", error);
+      toast.error("Could not create task. Try again!");
     }
   };
 
-  // 4. Update Task Handler
+  // 2. Update Task
   const handleTaskUpdate = async (id: string, taskData: Partial<Task>) => {
     try {
       const response = await API.patch(`/tasks/${id}`, taskData);
-
       const updatedTask: Task | undefined =
         response.data?.data?.task || response.data?.task || response.data?.data;
 
@@ -93,16 +96,41 @@ export default function DashboardPage() {
             return taskId === id ? updatedTask : t;
           }),
         );
+        toast.success("Task updated successfully!");
       } else {
         await fetchTasks();
       }
     } catch (error) {
       console.error("Failed to update task:", error);
+      toast.error("Failed to update task!");
     }
   };
 
-  // 5. Delete Task Handler
-  const handleTaskDelete = async (id: string) => {
+  // 3. Open Delete Confirmation Modal
+  const handleOpenDeleteModal = async (id: string) => {
+    const taskToDelete = tasks.find((t) => {
+      const taskId = t._id || (t as Task & { id?: string }).id;
+      return taskId === id;
+    });
+
+    if (taskToDelete) {
+      setSelectedTaskToDelete(taskToDelete);
+      setDeleteModalOpen(true);
+    }
+  };
+
+  // 4. Confirm Delete Action
+  const handleConfirmDelete = async () => {
+    if (!selectedTaskToDelete) return;
+
+    const id =
+      selectedTaskToDelete._id ||
+      (selectedTaskToDelete as Task & { id?: string }).id;
+
+    if (!id) return;
+
+    setIsDeleting(true);
+
     try {
       const response = await API.delete(`/tasks/${id}`);
 
@@ -113,15 +141,21 @@ export default function DashboardPage() {
             return taskId !== id;
           }),
         );
+        toast.success("Task deleted successfully!");
       } else {
         await fetchTasks();
       }
     } catch (error) {
       console.error("Failed to delete task:", error);
+      toast.error("Could not delete task!");
+    } finally {
+      setIsDeleting(false);
+      setDeleteModalOpen(false);
+      setSelectedTaskToDelete(null);
     }
   };
 
-  // 6. Status Change Handler (Optimistic Drag and Drop)
+  // 5. Status Change
   const handleTaskStatusChange = async (id: string, status: TaskStatus) => {
     setTasks((prev) =>
       prev.map((t) => {
@@ -132,8 +166,10 @@ export default function DashboardPage() {
 
     try {
       await API.patch(`/tasks/${id}/status`, { status });
+      toast.info(`Task status updated to ${status.replace("_", " ")}`);
     } catch (error) {
       console.error("Failed to update task status:", error);
+      toast.error("Failed to update task status!");
       fetchTasks();
     }
   };
@@ -160,8 +196,20 @@ export default function DashboardPage() {
         initialTasks={tasks}
         onTaskCreate={handleTaskCreate}
         onTaskUpdate={handleTaskUpdate}
-        onTaskDelete={handleTaskDelete}
+        onTaskDelete={handleOpenDeleteModal} // 👈 Modal Trigger
         onTaskStatusChange={handleTaskStatusChange}
+      />
+
+      {/* Delete Modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setSelectedTaskToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        title={selectedTaskToDelete?.title}
       />
     </main>
   );

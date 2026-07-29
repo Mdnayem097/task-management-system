@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import QueryProvider from "@/components/providers/QueryProvider";
 import LayoutWrapper from "@/components/layout/LayoutWrapper";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
             <LayoutWrapper>{children}</LayoutWrapper>
           </AuthProvider>
         </QueryProvider>
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );
