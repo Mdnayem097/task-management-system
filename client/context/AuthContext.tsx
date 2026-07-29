@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import API from '@/lib/axios';
-import { User } from '@/types';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import API from "@/lib/axios";
+import { User } from "@/types";
 
 interface AuthContextType {
   user: User | null;
@@ -21,17 +21,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('cemzo_token');
+      const token = localStorage.getItem("cemzo_token");
       if (!token) {
         setLoading(false);
         return;
       }
 
       try {
-        const response = await API.get('/auth/me');
+        const response = await API.get("/auth/me");
         setUser(response.data.data.user);
       } catch (error) {
-        localStorage.removeItem('cemzo_token');
+        localStorage.removeItem("cemzo_token");
+        localStorage.removeItem("user");
         setUser(null);
       } finally {
         setLoading(false);
@@ -42,15 +43,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const login = (token: string, userData: User) => {
-    localStorage.setItem('cemzo_token', token);
+    localStorage.setItem("cemzo_token", token);
+    localStorage.setItem("user", JSON.stringify(userData));
+
     setUser(userData);
-    router.push('/dashboard');
+
+    router.push("/dashboard");
   };
 
   const logout = () => {
-    localStorage.removeItem('cemzo_token');
+    localStorage.removeItem("cemzo_token");
+    localStorage.removeItem("user");
+
     setUser(null);
-    router.push('/login');
+
+    router.push("/login");
   };
 
   return (
@@ -63,7 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

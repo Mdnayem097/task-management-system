@@ -4,103 +4,137 @@ import { useEffect, useState } from "react";
 import TaskBoard from "@/components/tasks/TaskBoard";
 import { Task, TaskStatus } from "@/types";
 import { Loader2 } from "lucide-react";
+import API from "@/lib/axios";
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch all tasks from API on page load
+  // ১. Reusable Fetch Function (Effect-এর ভেতর থেকে ও বাইরে থেকে নিরাপদে কল করার জন্য)
+  const fetchTasks = async () => {
+    try {
+      const response = await API.get("/tasks");
+
+      // Safe Response Extraction
+      const taskList: Task[] =
+        response.data?.data?.tasks ||
+        response.data?.tasks ||
+        (Array.isArray(response.data) ? response.data : []);
+
+      setTasks(taskList);
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. Fetch tasks on initial render safely
   useEffect(() => {
-    const fetchTasks = async () => {
+    let isMounted = true;
+
+    const loadInitialData = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/tasks`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-            },
-          },
-        );
-        const data = await response.json();
-        if (data.success) {
-          setTasks(data.data);
+        const response = await API.get("/tasks");
+        const taskList: Task[] =
+          response.data?.data?.tasks ||
+          response.data?.tasks ||
+          (Array.isArray(response.data) ? response.data : []);
+
+        if (isMounted) {
+          setTasks(taskList);
         }
       } catch (error) {
         console.error("Failed to fetch tasks:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchTasks();
+    loadInitialData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // 2. Create Task Handler
+  // 3. Create Task Handler
   const handleTaskCreate = async (taskData: Partial<Task>) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/tasks`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-          },
-          body: JSON.stringify(taskData),
-        },
-      );
-      const data = await response.json();
-      if (data.success) {
-        setTasks((prev) => [data.data, ...prev]);
+      const response = await API.post("/tasks", taskData);
+
+      const newTask: Task | undefined =
+        response.data?.data?.task || response.data?.task || response.data?.data;
+
+      if (newTask) {
+        setTasks((prev) => [newTask, ...prev]);
+      } else {
+        await fetchTasks();
       }
     } catch (error) {
       console.error("Failed to create task:", error);
     }
   };
 
-  // 3. Update Task Handler
+  // 4. Update Task Handler
   const handleTaskUpdate = async (id: string, taskData: Partial<Task>) => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-        },
-        body: JSON.stringify(taskData),
-      });
+      const response = await API.patch(`/tasks/${id}`, taskData);
+
+      const updatedTask: Task | undefined =
+        response.data?.data?.task || response.data?.task || response.data?.data;
+
+      if (updatedTask) {
+        setTasks((prev) =>
+          prev.map((t) => {
+            const taskId = t._id || (t as Task & { id?: string }).id;
+            return taskId === id ? updatedTask : t;
+          }),
+        );
+      } else {
+        await fetchTasks();
+      }
     } catch (error) {
       console.error("Failed to update task:", error);
     }
   };
 
-  // 4. Delete Task Handler
+  // 5. Delete Task Handler
   const handleTaskDelete = async (id: string) => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-        },
-      });
+      const response = await API.delete(`/tasks/${id}`);
+
+      if (response.status === 200 || response.status === 204) {
+        setTasks((prev) =>
+          prev.filter((t) => {
+            const taskId = t._id || (t as Task & { id?: string }).id;
+            return taskId !== id;
+          }),
+        );
+      } else {
+        await fetchTasks();
+      }
     } catch (error) {
       console.error("Failed to delete task:", error);
     }
   };
 
-  // 5. Status Change Handler (Drag & Drop)
+  // 6. Status Change Handler (Optimistic Drag and Drop)
   const handleTaskStatusChange = async (id: string, status: TaskStatus) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        const taskId = t._id || (t as Task & { id?: string }).id;
+        return taskId === id ? { ...t, status } : t;
+      }),
+    );
+
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-        },
-        body: JSON.stringify({ status }),
-      });
+      await API.patch(`/tasks/${id}/status`, { status });
     } catch (error) {
       console.error("Failed to update task status:", error);
+      fetchTasks();
     }
   };
 
@@ -122,6 +156,7 @@ export default function DashboardPage() {
       </div>
 
       <TaskBoard
+        key={tasks.length}
         initialTasks={tasks}
         onTaskCreate={handleTaskCreate}
         onTaskUpdate={handleTaskUpdate}

@@ -16,27 +16,29 @@ export default function LoginPage() {
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
+  e.preventDefault();
+  setError("");
+  setIsLoading(true);
 
-    try {
-      const response = await API.post("/auth/login", { email, password });
-      const { token, user } = response.data.data;
-      login(token, user);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(
-          err.response?.data?.message ||
-            "Login failed. Please check credentials.",
-        );
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
-    } finally {
-      setIsLoading(false);
+  try {
+    const response = await API.post("/auth/login", { email, password });
+    const token = response.data.token;
+    const user = response.data.data.user;
+
+    login(token, user);
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      setError(
+        err.response?.data?.message ||
+          "Login failed. Please check credentials."
+      );
+    } else {
+      setError("An unexpected error occurred. Please try again.");
     }
-  };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
