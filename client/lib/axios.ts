@@ -1,12 +1,7 @@
 import axios from "axios";
 
-const BASE_URL =
-  process.env.NODE_ENV === "production"
-    ? "/api/v1"
-    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
-
 const API = axios.create({
-  baseURL: BASE_URL,
+  baseURL: "https://task-management-system-server-iota.vercel.app/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
