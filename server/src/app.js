@@ -7,25 +7,12 @@ const AppError = require('./utils/appError');
 
 const app = express();
 
-app.use(cors({
-    origin: true,
-    credentials: true
-}));
-
 // Global Middlewares
 app.use(cors({
-    origin: true,
-    credentials: true
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true
 }));
-
-// Preflight Request
-app.options('*', cors());
 app.use(express.json());
-
-// Base Test Route
-app.get('/', (req, res) => {
-    res.send('Server is running...');
-});
 
 // API Routes
 app.use('/api/v1/auth', authRoutes);
@@ -37,11 +24,11 @@ app.get('/health', (req, res) => {
 });
 
 // Handle Undefined Routes (404)
-app.use((req, res, next) => {
+app.all(/(.*)/, (req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
-// Global Error Handler
+// Global Error Handler Middleware
 app.use(errorHandler);
 
 module.exports = app;
