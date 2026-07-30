@@ -1,11 +1,10 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://task-management-system-server-iota.vercel.app/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,
 });
 
 API.interceptors.request.use(
