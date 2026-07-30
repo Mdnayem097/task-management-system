@@ -12,6 +12,14 @@ app.use(cors({
     credentials: true
 }));
 
+// Global Middlewares
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
+
+// Preflight Request
+app.options('*', cors());
 app.use(express.json());
 
 // Base Test Route
