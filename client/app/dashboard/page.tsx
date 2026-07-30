@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import TaskBoard from "@/components/tasks/TaskBoard";
-import DeleteConfirmModal from "@/components/tasks/DeleteConfirmModal"; // 👈 Delete Modal Import
+import DeleteConfirmModal from "@/components/tasks/DeleteConfirmModal"; 
 import { Task, TaskStatus } from "@/types";
 import { Loader2 } from "lucide-react";
 import API from "@/lib/axios";
@@ -12,7 +12,7 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔴 Delete Modal State
+  // Delete Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedTaskToDelete, setSelectedTaskToDelete] = useState<Task | null>(
     null,
