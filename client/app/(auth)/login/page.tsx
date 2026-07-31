@@ -5,7 +5,7 @@ import Link from "next/link";
 import axios from "axios";
 import API from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
-import { Lock, Mail, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, Loader2, UserCheck } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,30 +15,47 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError("");
-  setIsLoading(true);
+  const handleLogin = async (loginEmail: string, loginPass: string) => {
+    setError("");
+    setIsLoading(true);
 
-  try {
-    const response = await API.post("/auth/login", { email, password });
-    const token = response.data.token;
-    const user = response.data.data.user;
+    try {
+      const response = await API.post("/auth/login", {
+        email: loginEmail,
+        password: loginPass,
+      });
+      const token = response.data.token;
+      const user = response.data.data.user;
 
-    login(token, user);
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      setError(
-        err.response?.data?.message ||
-          "Login failed. Please check credentials."
-      );
-    } else {
-      setError("An unexpected error occurred. Please try again.");
+      login(token, user);
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.message ||
+            "Login failed. Please check credentials."
+        );
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleLogin(email, password);
+  };
+
+  // ✅ Demo Login Handler (তোমার টেস্ট ক্র্যাডেনশিয়াল বসিয়ে নিও)
+  const handleDemoLogin = () => {
+    const demoEmail = "user@example.com";
+    const demoPassword = "password123";
+
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    handleLogin(demoEmail, demoPassword);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
@@ -55,6 +72,24 @@ export default function LoginPage() {
             {error}
           </div>
         )}
+
+        {/* ✅ Quick Demo Login Button */}
+        <button
+          type="button"
+          onClick={handleDemoLogin}
+          disabled={isLoading}
+          className="w-full py-2 px-4 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium text-xs transition-colors focus:outline-none disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <UserCheck className="h-4 w-4 text-emerald-600" />
+          <span>Demo User One-Click Login</span>
+        </button>
+
+        <div className="relative flex items-center justify-center">
+          <div className="border-t border-gray-200 w-full" />
+          <span className="bg-white px-2 text-[10px] text-gray-400 uppercase tracking-wider absolute">
+            or use credentials
+          </span>
+        </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
