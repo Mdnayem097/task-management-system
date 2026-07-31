@@ -6,10 +6,10 @@ const errorHandler = require('./middlewares/errorHandler');
 const AppError = require('./utils/appError');
 
 const app = express();
-
+console.log('CLIENT_URL:', process.env.CLIENT_URL);
 // Global Middlewares
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL,
   credentials: true
 }));
 app.use(express.json());
