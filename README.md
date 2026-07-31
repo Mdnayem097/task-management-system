@@ -35,7 +35,7 @@ A modern, robust, and full-stack Task Management Application designed to create,
 
 ## 🛠️ Project Setup & Installation
 
-### **1. Backend Setup**
+### 1. Backend Setup
 
 ```bash
 # Navigate to the backend directory
@@ -51,9 +51,10 @@ JWT_SECRET=your_jwt_secret
 CLIENT_URL=http://localhost:3000
 
 # Start the local development server
-npm run dev```
+npm run dev
+```
 
-### **1. Frontend Setup**
+### **2. Frontend Setup**
 
 ```bash
 # Navigate to the frontend directory
@@ -67,3 +68,4 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
 
 # Start the Next.js development server
 npm run dev
+```
